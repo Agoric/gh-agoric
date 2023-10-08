@@ -21,7 +21,7 @@ install: build
 	gh extension install .
 
 run: install
-	gh agoric
+	gh agoric download --limit 1
 
 fmt:
 	gofmt -w $(SRC)
