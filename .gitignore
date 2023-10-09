@@ -19,3 +19,12 @@
 
 # Go workspace file
 go.work
+
+# Build output
+out/
+bin/
+gh-agoric
+.gh-agoric-cache.json
+
+# Dependencies
+vendor/
