@@ -4,12 +4,19 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"encoding/json"
 	"log"
 
-	gh "github.com/cli/go-gh"
+	gha "github.com/agoric/gh-agoric/internal"
 	"github.com/spf13/cobra"
 )
+
+type downloadOptions struct {
+	notion  string
+	status  string
+	upgrade string
+}
+
+var downloadOpts downloadOptions
 
 // downloadCmd represents the download command
 var downloadCmd = &cobra.Command{
@@ -22,21 +29,25 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		itemList, err := NewGHItemList(options.projNum, options.owner, options.limit)
+
+		client, err := gha.NewGHClient(options.cacheFile)
 		if err != nil {
 			log.Fatal(err)
 			return
 		}
 
-		var b []byte
-		b, err = json.MarshalIndent(&itemList, "", "  ")
-		if nil != err {
+		var items gha.GHItems
+		items, err = client.ReqItems(options.projNum, options.owner, options.limit)
+		if err != nil {
 			log.Fatal(err)
 			return
 		}
 
-		log.Print(string(b[:]))
+		items = items.FilterByNotion(downloadOpts.notion)
+		items = items.FilterByStatus(downloadOpts.status)
+		items = items.FilterByUpgrade(downloadOpts.upgrade)
 
+		log.Println(items.ToJson())
 	},
 }
 
@@ -52,50 +63,8 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// downloadCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
 
-type GHContent struct {
-	Type       string `json:"type"`
-	Body       string `json:"body"`
-	Title      string `json:"title"`
-	Number     int    `json:"number"`
-	Repository string `json:"repository"`
-	URL        string `json:"url"`
-}
-
-type GHItem struct {
-	Assignees          []string  `json:"assignees"`
-	LinkedPullRequests []string  `json:"linked pull requests"`
-	Content            GHContent `json:"content"`
-	Repository         string    `json:"repository"`
-	Status             string    `json:"status"`
-	Id                 string    `json:"id"`
-	DueDate            string    `json:"due Date"`
-	StartDate          string    `json:"start Date"`
-	Notion             string    `json:"notion"`
-	Upgrade            string    `json:"upgrade"`
-}
-
-type GHItemList struct {
-	Items      []GHItem
-	TotalCount int
-}
-
-func NewGHItemList(projNum string, owner string, limit string) (*GHItemList, error) {
-	args := []string{"project", "item-list", options.projNum, "--owner", options.owner, "--limit", options.limit, "--format", "json"}
-	stdOut, stdErr, err := gh.Exec(args...)
-	if err != nil {
-		log.Fatal(stdErr)
-		log.Fatal(err)
-		return nil, err
-	}
-
-	var itemList GHItemList
-	err = json.Unmarshal(stdOut.Bytes(), &itemList)
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-
-	return &itemList, nil
+	downloadCmd.Flags().StringVar(&downloadOpts.notion, "notion", "", "Filter by value of notion")
+	downloadCmd.Flags().StringVar(&downloadOpts.status, "status", "", "Filter by value of status")
+	downloadCmd.Flags().StringVar(&downloadOpts.upgrade, "upgrade", "", "Filter by value of upgrade")
 }

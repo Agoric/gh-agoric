@@ -24,6 +24,7 @@ go.work
 out/
 bin/
 gh-agoric
+.gh-agoric-cache.json
 
 # Dependencies
 vendor/

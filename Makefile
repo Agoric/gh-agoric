@@ -21,7 +21,7 @@ install: build
 	gh extension install .
 
 run: install
-	gh agoric download --limit 1
+	gh agoric download --limit 1 --notion "Nullberry Fix"
 
 fmt:
 	gofmt -w $(SRC)
@@ -36,4 +36,5 @@ install_deps:
 	go get -v ./...
 
 clean:
-	rm -rf $(BINARY_NAME)
+	rm -rf $(BINARY_NAME) 2> /dev/null
+	rm .gh-agoric-cache.json 2> /dev/null
